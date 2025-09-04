@@ -13,7 +13,7 @@ ground = curve(pos=[vec(-5000,-200,0), vec(5000,-200,0)], color=color.black, rad
 
 # objects (ảnh xe, cần link trực tiếp)
 car = box(pos=vec(0,0,0), size=vec(1000,500,100),
-          texture="car.jpg")
+          texture="car.png")
 
 # initial conditions
 a = 2          # gia tốc
