@@ -5,8 +5,8 @@ scene = canvas(title='1D Accelerated Motion Coding Activity', width=800, height=
 scene.background = color.white
 
 # objects
-car = box(pos=vec(0,0,5), size=vec(10,10,0.1), color=color.blue)
-
+car = box(pos=vec(0,0,5), size=vec(20,10,0.1),
+          texture="https://www.google.com/url?sa=i&url=https%3A%2F%2Fhelloartsy.com%2Fdraw-f1-car%2F&psig=AOvVaw0-u7NQaKX8VpO5en0VH0aH&ust=1757079339750000&source=images&cd=vfe&opi=89978449&ved=0CBUQjRxqFwoTCJirreGcv48DFQAAAAAdAAAAABAg")
 # initial conditions
 x0 = car.pos.x
 v = 20
