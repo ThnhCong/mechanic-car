@@ -1,5 +1,5 @@
 from vpython import *
-#toi buon ngu
+#toi buon ngu quaaaaaa
 
 # ========== Cấu hình canvas ==========
 scene = canvas(title="Mô phỏng chuyển động 1D: x(t) = -4t + 2t²",
