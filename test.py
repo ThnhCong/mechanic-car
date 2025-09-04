@@ -1,9 +1,9 @@
 import pygame
 import sys
 import math
-
+import matplotlib.animation as animation
 pygame.init()
-#ae cuu toi
+
 # Kích thước cửa sổ
 WIDTH, HEIGHT = 1000, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
