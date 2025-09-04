@@ -33,9 +33,12 @@ print(f"Tốc độ TB: {avg_speed:.2f} m/s")
 print("-------------------------\n")
 
 # ========== Tạo xe ==========
-car = box(pos=vec(x_t0*10,0,0), size=vec(10,5,4), color=color.blue)  # scale 10px/m
-wheel1 = cylinder(pos=car.pos+vec(-4,-3,2), axis=vec(0,0,1), radius=2, color=color.black)
-wheel2 = cylinder(pos=car.pos+vec(4,-3,2), axis=vec(0,0,1), radius=2, color=color.black)
+inge = "car.png"
+car = box(
+    pos=vec(x_t0*10,0,0),
+    size=vec(20,10,0.1),
+    texture= inge
+)
 
 # ========== Đồ thị ==========
 times = [t0 + i*dt for i in range(int((T-t0)/dt)+1)]
@@ -72,14 +75,6 @@ while t <= T:
     x = x_func(t)
     v = v_func(t)
     a = a_func(t)
-
-    # Animation xe
-    dx = (x - last_x) * 10
-    car.pos.x += dx
-    wheel1.pos.x += dx
-    wheel2.pos.x += dx
-    wheel1.rotate(angle=-dx/2, axis=vec(0,0,1))  # quay bánh
-    wheel2.rotate(angle=-dx/2, axis=vec(0,0,1))
 
     # Cập nhật quãng đường
     distance_traveled += abs(x - last_x)
