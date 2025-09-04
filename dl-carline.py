@@ -1,4 +1,5 @@
 from vpython import *
+#toi buon ngu quaaaaaa
 
 # ========== Cấu hình canvas ==========
 scene = canvas(title="Mô phỏng chuyển động 1D: x(t) = -4t + 2t²",
@@ -38,14 +39,25 @@ wheel1 = cylinder(pos=car.pos+vec(-4,-3,2), axis=vec(0,0,1), radius=2, color=col
 wheel2 = cylinder(pos=car.pos+vec(4,-3,2), axis=vec(0,0,1), radius=2, color=color.black)
 
 # ========== Đồ thị ==========
+times = [t0 + i*dt for i in range(int((T-t0)/dt)+1)]
+x_vals = [x_func(tt) for tt in times]
+v_vals = [v_func(tt) for tt in times]
+a_vals = [a_func(tt) for tt in times]
+
 graph_pos = graph(title="Đồ thị x(t)", width=900, height=250, xtitle="t (s)", ytitle="x (m)")
 f_pos = gcurve(graph=graph_pos, color=color.blue)
+for tt, xx in zip(times, x_vals):
+    f_pos.plot(tt, xx)
 
 graph_vel = graph(title="Đồ thị v(t)", width=900, height=250, xtitle="t (s)", ytitle="v (m/s)")
 f_vel = gcurve(graph=graph_vel, color=color.green)
+for tt, vv in zip(times, v_vals):
+    f_vel.plot(tt, vv)
 
 graph_acc = graph(title="Đồ thị a(t)", width=900, height=250, xtitle="t (s)", ytitle="a (m/s²)")
 f_acc = gcurve(graph=graph_acc, color=color.red)
+for tt, aa in zip(times, a_vals):
+    f_acc.plot(tt, aa)
 
 # Label hiển thị thông tin
 info = label(pos=vec(0,8,0), text="", box=False, height=16, color=color.black)
@@ -62,22 +74,15 @@ while t <= T:
     v = v_func(t)
     a = a_func(t)
 
-    # Animation xe
     dx = (x - last_x) * 10
     car.pos.x += dx
     wheel1.pos.x += dx
     wheel2.pos.x += dx
-    wheel1.rotate(angle=-dx/2, axis=vec(0,0,1))  # quay bánh
-    wheel2.rotate(angle=-dx/2, axis=vec(0,0,1))
-
+    wheel1.rotate(angle=-dx / 2, axis=vec(0, 0, 1))  # quay bánh
+    wheel2.rotate(angle=-dx / 2, axis=vec(0, 0, 1))
     # Cập nhật quãng đường
     distance_traveled += abs(x - last_x)
     last_x = x
-
-    # Vẽ đồ thị
-    f_pos.plot(t, x)
-    f_vel.plot(t, v)
-    f_acc.plot(t, a)
 
     # Hiển thị thông số
     info.text = f"t = {t:.2f} s | x = {x:.2f} m | v = {v:.2f} m/s | a = {a:.2f} m/s² | s = {distance_traveled:.2f} m"
