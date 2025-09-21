@@ -31,15 +31,26 @@ carx = "https://static.vecteezy.com/system/resources/previews/008/957/252/non_2x
 car = box(pos=vec(0, 15, 0), size=vec(40, 20, 0.01), texture=carx)
 
 
-# graphs
+
+# graph
 graph1 = graph(width=800, height=200, xtitle='time (s)', ytitle='position (m)')
-graph2 = graph(width=800, height=200, xtitle='time (s)', ytitle='velocity (m/s)')
-graph3 = graph(width=800, height=200, xtitle='time (s)', ytitle='acceleration (m/s²)')
+
+curve1 = gcurve(graph=graph1, color=color.blue)
+
+# sample the function over time
+N = 200   # number of sample points
+for i in range(N+1):
+    tt = i * t_set / N    # go from 0 → t_set
+    curve1.plot(tt, x_func(tt))
+
+
 # curves
 f1 = gcurve(graph=graph1, color=color.blue)   # position
-f2 = gcurve(graph=graph2, color=color.green)  # velocity
-f3 = gcurve(graph=graph3, color=color.red)    # acceleration
 
+
+#dot
+dot = gdots(color=color.red)
+    
 # info label (fixed position above the ruler)
 info = label(pos=vec(0,50,0), text="", height=16, box=False, color=color.black)
 
@@ -53,7 +64,11 @@ while t <= t_set:
     info.text = f"t={t:.2f} s | x={x_func(t):.2f} m | v={v_func(t):.2f} m/s | a={a_func(t):.2f} m/s²"
     
     f1.plot(t, x_func(t))
-    f2.plot(t, v_func(t))
-    f3.plot(t, a_func(t))
+    #f2.plot(t, v_func(t))
+    #f3.plot(t, a_func(t))
 
+    dot.delete()                 # clear old dot
+    dot = gdots(color=color.red) # create a fresh one
+    dot.plot(t, x_func(t))
     t += dt
+
