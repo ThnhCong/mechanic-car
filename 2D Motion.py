@@ -1,106 +1,105 @@
-#{INSTRUCTION}!!!
-#use right click to rotate the coordinates
-#scroll to zoom in or out
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
 
 
+# --- Setup figure ---
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
 
+axis_length = 20
+tick_interval = 5
 
+# --- Vẽ hệ trục ---
+ax.quiver(0, 0, 0, axis_length, 0, 0, color="r", arrow_length_ratio=0.05)
+ax.quiver(0, 0, 0, 0, axis_length, 0, color="g", arrow_length_ratio=0.05)
+ax.quiver(0, 0, 0, 0, 0, axis_length, color="b", arrow_length_ratio=0.05)
 
+# Nhãn trục
+ax.text(axis_length+1, 0, 0, "x", color="r")
+ax.text(0, axis_length+1, 0, "y", color="g")
+ax.text(0, 0, axis_length+1, "z", color="b")
 
+# Ticks
+ax.set_xticks(np.arange(0, axis_length+1, tick_interval))
+ax.set_yticks(np.arange(0, axis_length+1, tick_interval))
+ax.set_zticks(np.arange(-axis_length, axis_length+1, tick_interval))
 
-
-
-
-
-from vpython import *
-scale = 50
-scene = canvas(title="3D Coordinate System with Ticks",
-               width=1000, height=600, background=color.white)
-
-scene.forward = vector(-1, -2, -0.5)   # tilt to see all axes
-scene.up = vector(0, 0, 1)             # keep z axis pointing up
-
-
-
-#scene.autoscale = False
-
-
-axis_length = 20   # length of each axis
-tick_interval = 5 # spacing between ticks
-tick_size = 0.1   # half length of tick mark
-
-# Draw axes
-x_axis = arrow(pos=vec(0,0,0), axis=vec(axis_length,0,0), color=color.red, shaftwidth=0.1)
-y_axis = arrow(pos=vec(0,0,0), axis=vec(0,axis_length,0), color=color.green, shaftwidth=0.1)
-z_axis = arrow(pos=vec(0,0,0), axis=vec(0,0,axis_length), color=color.blue, shaftwidth=0.1)
-
-# Function to draw ticks and labels
-def draw_ticks(axis_vec, axis_label, color_axis):
-    for i in range(1, axis_length+1, tick_interval):
-        pos = i*axis_vec
-
-        # Draw tick perpendicular to axis
-        if axis_vec.x: # x-axis
-            curve(pos=[pos+vec(0,-tick_size,0), pos+vec(0,tick_size,0)], color=color.black)
-            label(pos=pos+vec(0,-2*tick_size,0), text=str(i), height=10, box=False, color=color.black)
-        elif axis_vec.y: # y-axis
-            curve(pos=[pos+vec(-tick_size,0,0), pos+vec(tick_size,0,0)], color=color.black)
-            label(pos=pos+vec(-2*tick_size,0,0), text=str(i), height=10, box=False, color=color.black)
-        elif axis_vec.z: # z-axis
-            curve(pos=[pos+vec(-tick_size,0,0), pos+vec(tick_size,0,0)], color=color.black)
-            label(pos=pos+vec(0,0,0.2), text=str(i), height=10, box=False, color=color.black)
-
-    # Add axis label
-    label(pos=(axis_length+0.3)*axis_vec, text=axis_label, height=14, box=False, color=color_axis)
-
-# Add ticks + labels
-draw_ticks(vec(1,0,0), "x", color.red)
-draw_ticks(vec(0,1,0), "y", color.green)
-draw_ticks(vec(0,0,1), "z", color.blue)
-
-# Moving ball with trail
-ball = sphere(pos=vector(0,0,0), radius=0.3, color=color.magenta,
-              make_trail=True)
-v_arrow = arrow(pos=ball.pos, axis=vector(1,0,0), color=color.blue, shaftwidth=0.08)
-
-# Define velocity function v(t)
-def velocity_func(t):
-    return vector(9.6, 0, -2*t)
-
-# Label for velocity
-v_label = label(pos=v_arrow.pos + v_arrow.axis,
-                text="v", xoffset=10, yoffset=10,
-                space=30, height=16, box=False, color=color.blue)
-
-# Info label
-info = label(pos=vector(20, 20, 0),
-             text="", height=12, box=False, opacity=0,
-             color=color.black)
-# Animate motion
-t = 0
-dt = 0.01
-while True:     
-    rate(20)
-
-    if t > 3:
-        t = 0
-        ball.clear_trail()
-
-    # Physics position
+# --- Hàm vị trí ---
+def position(t):
     x = 9.6 * t
     y = 8.85
     z = -t**2
+    return np.array([x, y, z])
 
-    # Scaled position
-    ball.pos = vector(x, y, z)
-    v_arrow.pos = ball.pos
-    #v_arrow.axis = velocity_func(t)
-    v_arrow.axis = hat(velocity_func(t)) * 2   # always length 3, only shows direction
+# --- Hàm vận tốc ---
+def velocity_func(t):
+    return np.array([9.6, 0, -2*t])
 
-    v_label.pos = v_arrow.pos + v_arrow.axis*2
-   
-    # Info text shows actual physics units (not scaled)
-    info.text = f"t={t:.2f} s | x = ({x:.2f} | y = {y:.2f} | z = {z:.2f})"
+# --- Tạo quả cầu ---
+def create_sphere(center, r=0.5, resolution=20):
+    u, v = np.mgrid[0:2*np.pi:resolution*1j, 0:np.pi:resolution*1j]
+    x = r * np.cos(u) * np.sin(v) + center[0]
+    y = r * np.sin(u) * np.sin(v) + center[1]
+    z = r * np.cos(v) + center[2]
+    return x, y, z
 
-    t += dt
+# Vẽ quả cầu ban đầu
+pos0 = position(0)
+X, Y, Z = create_sphere(pos0, r=0.5)
+ball = ax.plot_surface(X, Y, Z, color="m", shade=True)
+
+# Quỹ đạo
+trail, = ax.plot([], [], [], '-', color="m", linewidth=1)
+
+# Vector vận tốc - Khởi tạo là None
+v_arrow = None
+
+# Giới hạn khung nhìn
+ax.set_xlim(0, axis_length)
+ax.set_ylim(0, axis_length)
+ax.set_zlim(-axis_length, axis_length)
+
+trail_points = []
+
+# --- Hàm update ---
+def update_plot(frame):
+    global v_arrow, trail_points, ball
+
+    t = frame * 0.05
+    # Reset quỹ đạo khi frame đạt 200 (cuối chu kỳ)
+    if frame == 0:
+        trail_points = []
+
+    pos = position(t)
+    vel = velocity_func(t)
+
+    # Xóa quả cầu cũ
+    ball.remove()
+    # Vẽ quả cầu mới tại vị trí pos
+    X, Y, Z = create_sphere(pos, r=0.5)
+    ball = ax.plot_surface(X, Y, Z, color="m", shade=True)
+
+    # Quỹ đạo
+    trail_points.append(pos)
+    pts = np.array(trail_points)
+    # Xóa quỹ đạo cũ trước khi vẽ quỹ đạo mới
+    trail.set_data([], [])
+    trail.set_3d_properties([])
+    trail.set_data(pts[:, 0], pts[:, 1])
+    trail.set_3d_properties(pts[:, 2])
+
+    # Arrow: xóa cái cũ rồi vẽ mới
+    if v_arrow is not None:
+        v_arrow.remove()
+    v_arrow = ax.quiver(pos[0], pos[1], pos[2],
+                        vel[0]*0.1, vel[1]*0.1, vel[2]*0.1,
+                        color="b", arrow_length_ratio=0.2)
+
+    return ball, trail, v_arrow
+
+# --- Animation ---
+ani = FuncAnimation(fig, update_plot, frames=200, interval=50, blit=False)
+plt.show()
 

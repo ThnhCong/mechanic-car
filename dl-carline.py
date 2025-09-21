@@ -1,91 +1,104 @@
-from vpython import *
-#toi buon ngu quaaaaaa
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.animation import FuncAnimation
 
-# ========== Cấu hình canvas ==========
-scene = canvas(title="Mô phỏng chuyển động 1D: x(t) = -4t + 2t²",
-               width=900, height=300, center=vec(0,0,0), background=color.white)
 
-# Nhập thời gian
-t0 = float(input("Nhập thời gian bắt đầu t0 (s): "))
-T = float(input("Nhập thời gian kết thúc T (s): "))
+# --- Setup figure ---
+fig = plt.figure(figsize=(10, 7))
+ax = fig.add_subplot(111, projection='3d')
 
-# Tham số mô phỏng
-dt = 0.02
-t = t0
+axis_length = 20
+tick_interval = 5
 
-# Công thức
-def x_func(t): return -4*t + 2*t**2
-def v_func(t): return -4 + 4*t
-def a_func(t): return 4
+# --- Vẽ hệ trục ---
+ax.quiver(0, 0, 0, axis_length, 0, 0, color="r", arrow_length_ratio=0.05)
+ax.quiver(0, 0, 0, 0, axis_length, 0, color="g", arrow_length_ratio=0.05)
+ax.quiver(0, 0, 0, 0, 0, axis_length, color="b", arrow_length_ratio=0.05)
 
-# Tính toán ban đầu
-x_t0 = x_func(t0)
-x_T = x_func(T)
-displacement_total = x_T - x_t0
-distance_total = abs(displacement_total)
-dt_total = T - t0
-avg_velocity = displacement_total/dt_total if dt_total > 0 else 0
-avg_speed = distance_total/dt_total if dt_total > 0 else 0
+# Nhãn trục
+ax.text(axis_length+1, 0, 0, "x", color="r")
+ax.text(0, axis_length+1, 0, "y", color="g")
+ax.text(0, 0, axis_length+1, "z", color="b")
 
-print("\n--- Kết quả tính toán ---")
-print(f"Độ dời Δx: {displacement_total:.2f} m")
-print(f"Vận tốc TB: {avg_velocity:.2f} m/s")
-print(f"Tốc độ TB: {avg_speed:.2f} m/s")
-print("-------------------------\n")
+# Ticks
+ax.set_xticks(np.arange(0, axis_length+1, tick_interval))
+ax.set_yticks(np.arange(0, axis_length+1, tick_interval))
+ax.set_zticks(np.arange(-axis_length, axis_length+1, tick_interval))
 
-# ========== Tạo xe ==========
-car = box(pos=vec(x_t0*10,0,0), size=vec(10,5,4), color=color.blue)  # scale 10px/m
-wheel1 = cylinder(pos=car.pos+vec(-4,-3,2), axis=vec(0,0,1), radius=2, color=color.black)
-wheel2 = cylinder(pos=car.pos+vec(4,-3,2), axis=vec(0,0,1), radius=2, color=color.black)
+# --- Hàm vị trí ---
+def position(t):
+    x = 9.6 * t
+    y = 8.85
+    z = -t**2
+    return np.array([x, y, z])
 
-# ========== Đồ thị ==========
-times = [t0 + i*dt for i in range(int((T-t0)/dt)+1)]
-x_vals = [x_func(tt) for tt in times]
-v_vals = [v_func(tt) for tt in times]
-a_vals = [a_func(tt) for tt in times]
+# --- Hàm vận tốc ---
+def velocity_func(t):
+    return np.array([9.6, 0, -2*t])
 
-graph_pos = graph(title="Đồ thị x(t)", width=900, height=250, xtitle="t (s)", ytitle="x (m)")
-f_pos = gcurve(graph=graph_pos, color=color.blue)
-for tt, xx in zip(times, x_vals):
-    f_pos.plot(tt, xx)
+# --- Tạo quả cầu ---
+def create_sphere(center, r=0.5, resolution=20):
+    u, v = np.mgrid[0:2*np.pi:resolution*1j, 0:np.pi:resolution*1j]
+    x = r * np.cos(u) * np.sin(v) + center[0]
+    y = r * np.sin(u) * np.sin(v) + center[1]
+    z = r * np.cos(v) + center[2]
+    return x, y, z
 
-graph_vel = graph(title="Đồ thị v(t)", width=900, height=250, xtitle="t (s)", ytitle="v (m/s)")
-f_vel = gcurve(graph=graph_vel, color=color.green)
-for tt, vv in zip(times, v_vals):
-    f_vel.plot(tt, vv)
+# Vẽ quả cầu ban đầu
+pos0 = position(0)
+X, Y, Z = create_sphere(pos0, r=0.5)
+ball = ax.plot_surface(X, Y, Z, color="m", shade=True)
 
-graph_acc = graph(title="Đồ thị a(t)", width=900, height=250, xtitle="t (s)", ytitle="a (m/s²)")
-f_acc = gcurve(graph=graph_acc, color=color.red)
-for tt, aa in zip(times, a_vals):
-    f_acc.plot(tt, aa)
+# Quỹ đạo
+trail, = ax.plot([], [], [], '-', color="m", linewidth=1)
 
-# Label hiển thị thông tin
-info = label(pos=vec(0,8,0), text="", box=False, height=16, color=color.black)
+# Vector vận tốc - Khởi tạo là None
+v_arrow = None
 
-# ========== Vòng lặp mô phỏng ==========
-last_x = x_t0
-distance_traveled = 0
+# Giới hạn khung nhìn
+ax.set_xlim(0, axis_length)
+ax.set_ylim(0, axis_length)
+ax.set_zlim(-axis_length, axis_length)
 
-while t <= T:
-    rate(50)
+trail_points = []
 
-    # Tính giá trị tại thời điểm t
-    x = x_func(t)
-    v = v_func(t)
-    a = a_func(t)
+# --- Hàm update ---
+def update_plot(frame):
+    global v_arrow, trail_points, ball
 
-    dx = (x - last_x) * 10
-    car.pos.x += dx
-    wheel1.pos.x += dx
-    wheel2.pos.x += dx
-    wheel1.rotate(angle=-dx / 2, axis=vec(0, 0, 1))  # quay bánh
-    wheel2.rotate(angle=-dx / 2, axis=vec(0, 0, 1))
-    # Cập nhật quãng đường
-    distance_traveled += abs(x - last_x)
-    last_x = x
+    t = frame * 0.05
+    # Reset quỹ đạo khi frame đạt 200 (cuối chu kỳ)
+    if frame == 0:
+        trail_points = []
 
-    # Hiển thị thông số
-    info.text = f"t = {t:.2f} s | x = {x:.2f} m | v = {v:.2f} m/s | a = {a:.2f} m/s² | s = {distance_traveled:.2f} m"
+    pos = position(t)
+    vel = velocity_func(t)
 
-    t += dt
+    # Xóa quả cầu cũ
+    ball.remove()
+    # Vẽ quả cầu mới tại vị trí pos
+    X, Y, Z = create_sphere(pos, r=0.5)
+    ball = ax.plot_surface(X, Y, Z, color="m", shade=True)
 
+    # Quỹ đạo
+    trail_points.append(pos)
+    pts = np.array(trail_points)
+    # Xóa quỹ đạo cũ trước khi vẽ quỹ đạo mới
+    trail.set_data([], [])
+    trail.set_3d_properties([])
+    trail.set_data(pts[:, 0], pts[:, 1])
+    trail.set_3d_properties(pts[:, 2])
+
+    # Arrow: xóa cái cũ rồi vẽ mới
+    if v_arrow is not None:
+        v_arrow.remove()
+    v_arrow = ax.quiver(pos[0], pos[1], pos[2],
+                        vel[0]*0.1, vel[1]*0.1, vel[2]*0.1,
+                        color="b", arrow_length_ratio=0.2)
+
+    return ball, trail, v_arrow
+
+# --- Animation ---
+ani = FuncAnimation(fig, update_plot, frames=200, interval=50, blit=False)
+plt.show()
