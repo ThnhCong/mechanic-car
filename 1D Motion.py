@@ -27,7 +27,7 @@ for x in range(x_min, x_max+1, 1):
 
 
 # car
-carx = "https://static.vecteezy.com/system/resources/previews/008/957/252/non_2x/flat-red-car-icon-clipart-in-cartoon-graphic-illustration-design-vector.jpg"
+carx = "https://tse1.mm.bing.net/th/id/OIP.EdccRqNVM4xH5pCLuqE0aAHaHa?pid=Api&P=0&h=180"
 car = box(pos=vec(0, 15, 0), size=vec(40, 20, 0.01), texture=carx)
 
 
