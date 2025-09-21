@@ -1,69 +1,106 @@
-#code moi day nhe
+#{INSTRUCTION}!!!
+#use right click to rotate the coordinates
+#scroll to zoom in or out
+
+
+
+
+
+
+
+
+
+
 
 from vpython import *
+scale = 50
+scene = canvas(title="3D Coordinate System with Ticks",
+               width=1000, height=600, background=color.white)
 
-# scene setup
-scene = canvas(title='2D Accelerated Motion',
-               width=900, height=400, center=vec(0,0,0),
-               background=color.white)
-# Change camera view (so Z points up)
-scene.forward = vector(-1,-5,-5)   # tilt the camera
-scene.up = vector(0,0,10)           # make Z-axis "up" in the view
+scene.forward = vector(-1, -2, -0.5)   # tilt to see all axes
+scene.up = vector(0, 0, 1)             # keep z axis pointing up
 
-# coordinate axes
-arrow(pos=vector(0,0,0), axis=vector(150,0,0), color=color.red, shaftwidth=2)   # X-axis
-arrow(pos=vector(0,0,0), axis=vector(0,150,0), color=color.green, shaftwidth=2) # Y-axis
-arrow(pos=vector(0,0,0), axis=vector(0,0,150), color=color.blue, shaftwidth=2)
 
-# axis labels
-label(pos=vec(155,0,0), text="X", height=12, box=False, color=color.red)
-label(pos=vec(0,155,0), text="Y", height=12, box=False, color=color.green)
-label(pos=vec(0,0,155), text="Z", height=12, box=False, color=color.blue)
-label(pos=vec(-10,-10,-10), text="O", height=10, box=False, color=color.black)
-#carx = "https://static.vecteezy.com/system/resources/previews/008/957/252/non_2x/flat-red-car-icon-clipart-in-cartoon-graphic-illustration-design-vector.jpg"
-# car object
 
-#car = box(pos=vec(0,0,0), size=vec(90,60,10),texture=carx)
-car = box(pos=vec(0,0,0), size=vec(10,6,4), color=color.orange, make_trail=True)
+#scene.autoscale = False
 
-# time setup
+
+axis_length = 20   # length of each axis
+tick_interval = 5 # spacing between ticks
+tick_size = 0.1   # half length of tick mark
+
+# Draw axes
+x_axis = arrow(pos=vec(0,0,0), axis=vec(axis_length,0,0), color=color.red, shaftwidth=0.1)
+y_axis = arrow(pos=vec(0,0,0), axis=vec(0,axis_length,0), color=color.green, shaftwidth=0.1)
+z_axis = arrow(pos=vec(0,0,0), axis=vec(0,0,axis_length), color=color.blue, shaftwidth=0.1)
+
+# Function to draw ticks and labels
+def draw_ticks(axis_vec, axis_label, color_axis):
+    for i in range(1, axis_length+1, tick_interval):
+        pos = i*axis_vec
+
+        # Draw tick perpendicular to axis
+        if axis_vec.x: # x-axis
+            curve(pos=[pos+vec(0,-tick_size,0), pos+vec(0,tick_size,0)], color=color.black)
+            label(pos=pos+vec(0,-2*tick_size,0), text=str(i), height=10, box=False, color=color.black)
+        elif axis_vec.y: # y-axis
+            curve(pos=[pos+vec(-tick_size,0,0), pos+vec(tick_size,0,0)], color=color.black)
+            label(pos=pos+vec(-2*tick_size,0,0), text=str(i), height=10, box=False, color=color.black)
+        elif axis_vec.z: # z-axis
+            curve(pos=[pos+vec(-tick_size,0,0), pos+vec(tick_size,0,0)], color=color.black)
+            label(pos=pos+vec(0,0,0.2), text=str(i), height=10, box=False, color=color.black)
+
+    # Add axis label
+    label(pos=(axis_length+0.3)*axis_vec, text=axis_label, height=14, box=False, color=color_axis)
+
+# Add ticks + labels
+draw_ticks(vec(1,0,0), "x", color.red)
+draw_ticks(vec(0,1,0), "y", color.green)
+draw_ticks(vec(0,0,1), "z", color.blue)
+
+# Moving ball with trail
+ball = sphere(pos=vector(0,0,0), radius=0.3, color=color.magenta,
+              make_trail=True)
+v_arrow = arrow(pos=ball.pos, axis=vector(1,0,0), color=color.blue, shaftwidth=0.08)
+
+# Define velocity function v(t)
+def velocity_func(t):
+    return vector(9.6, 0, -2*t)
+
+# Label for velocity
+v_label = label(pos=v_arrow.pos + v_arrow.axis,
+                text="v", xoffset=10, yoffset=10,
+                space=30, height=16, box=False, color=color.blue)
+
+# Info label
+info = label(pos=vector(20, 20, 0),
+             text="", height=12, box=False, opacity=0,
+             color=color.black)
+# Animate motion
 t = 0
-dt = 0.02
+dt = 0.01
+while True:     
+    rate(20)
 
-# graphs
-graph1 = graph(width=800, height=200, xtitle='time (s)', ytitle='position (m)')
-graph2 = graph(width=800, height=200, xtitle='time (s)', ytitle='velocity (m/s)')
-graph3 = graph(width=800, height=200, xtitle='time (s)', ytitle='acceleration (m/s²)')
-# curves
-f1 = gcurve(graph=graph1, color=color.blue)   # position
-f2 = gcurve(graph=graph2, color=color.green)  # velocity
-f3 = gcurve(graph=graph3, color=color.red)    # acceleration
+    if t > 3:
+        t = 0
+        ball.clear_trail()
 
-# motion equations
-def x_func(t): return -t**2 + 9.6*t + 8.85
-def v_func(t): return -2*t + 9.6
-def a_func(t): return -2
-def xf(t): return 9.6*t
-def yf(t): return 8.85
-def zf(t): return -t**2
+    # Physics position
+    x = 9.6 * t
+    y = 8.85
+    z = -t**2
 
+    # Scaled position
+    ball.pos = vector(x, y, z)
+    v_arrow.pos = ball.pos
+    #v_arrow.axis = velocity_func(t)
+    v_arrow.axis = hat(velocity_func(t)) * 2   # always length 3, only shows direction
 
-# animate
-t_set = 10
-while t <= t_set:
-    #if abs(t - t_set) < dt/2:
-        #print(f"at t = {t}, position: {x_func(t):.2f}m, v = {v_func(t):.2f}m/s, a = {a_func(t):.2f} m/s^2")
-    rate(150)
-
-    # update car position
-    car.pos = vec(xf(t), yf(t), zf(t))
-    # plot graphs
-    f1.plot(t, x_func(t))
-    f2.plot(t, v_func(t))
-    f3.plot(t, a_func(t))
+    v_label.pos = v_arrow.pos + v_arrow.axis*2
+   
+    # Info text shows actual physics units (not scaled)
+    info.text = f"t={t:.2f} s | x = ({x:.2f} | y = {y:.2f} | z = {z:.2f})"
 
     t += dt
-#print(f"position: {x_func(1):.2f}m, v = {v_func(1):.2f}m/s, a = {a_func(1):.2f} m/s^2")
-print(f"at t = {t_set}, position: {x_func(t_set):.2f}m, v = {v_func(t_set):.2f}m/s, a = {a_func(t_set):.2f} m/s^2, xf = {xf(t_set)}, yf = {yf(t_set)}, zf = {zf(t_set)} ")
-
 
