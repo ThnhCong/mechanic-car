@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
-
 # --- Setup figure ---
 fig = plt.figure(figsize=(10, 7))
 ax = fig.add_subplot(111, projection='3d')
@@ -17,33 +16,37 @@ ax.quiver(0, 0, 0, 0, axis_length, 0, color="g", arrow_length_ratio=0.05)
 ax.quiver(0, 0, 0, 0, 0, axis_length, color="b", arrow_length_ratio=0.05)
 
 # Nhãn trục
-ax.text(axis_length+1, 0, 0, "x", color="r")
-ax.text(0, axis_length+1, 0, "y", color="g")
-ax.text(0, 0, axis_length+1, "z", color="b")
+ax.text(axis_length + 1, 0, 0, "x", color="r")
+ax.text(0, axis_length + 1, 0, "y", color="g")
+ax.text(0, 0, axis_length + 1, "z", color="b")
 
 # Ticks
-ax.set_xticks(np.arange(0, axis_length+1, tick_interval))
-ax.set_yticks(np.arange(0, axis_length+1, tick_interval))
-ax.set_zticks(np.arange(-axis_length, axis_length+1, tick_interval))
+ax.set_xticks(np.arange(0, axis_length + 1, tick_interval))
+ax.set_yticks(np.arange(0, axis_length + 1, tick_interval))
+ax.set_zticks(np.arange(-axis_length, axis_length + 1, tick_interval))
+
 
 # --- Hàm vị trí ---
 def position(t):
     x = 9.6 * t
     y = 8.85
-    z = -t**2
+    z = -t ** 2
     return np.array([x, y, z])
+
 
 # --- Hàm vận tốc ---
 def velocity_func(t):
-    return np.array([9.6, 0, -2*t])
+    return np.array([9.6, 0, -2 * t])
+
 
 # --- Tạo quả cầu ---
 def create_sphere(center, r=0.5, resolution=20):
-    u, v = np.mgrid[0:2*np.pi:resolution*1j, 0:np.pi:resolution*1j]
+    u, v = np.mgrid[0:2 * np.pi:resolution * 1j, 0:np.pi:resolution * 1j]
     x = r * np.cos(u) * np.sin(v) + center[0]
     y = r * np.sin(u) * np.sin(v) + center[1]
     z = r * np.cos(v) + center[2]
     return x, y, z
+
 
 # Vẽ quả cầu ban đầu
 pos0 = position(0)
@@ -56,22 +59,34 @@ trail, = ax.plot([], [], [], '-', color="m", linewidth=1)
 # Vector vận tốc - Khởi tạo là None
 v_arrow = None
 
+# Hiển thị thông tin
+info_text = ax.text2D(0.05, 0.95, '', transform=ax.transAxes, fontsize=12, color='black')
+
 # Giới hạn khung nhìn
 ax.set_xlim(0, axis_length)
 ax.set_ylim(0, axis_length)
 ax.set_zlim(-axis_length, axis_length)
 
 trail_points = []
+reset_in_next_frame = False
+
 
 # --- Hàm update ---
 def update_plot(frame):
-    global v_arrow, trail_points, ball
+    global v_arrow, trail_points, ball, reset_in_next_frame
+
+    # Nếu cờ reset được bật, xóa quỹ đạo ngay lập tức và tắt cờ
+    if reset_in_next_frame:
+        trail_points = []
+        trail.set_data([], [])
+        trail.set_3d_properties([])
+        reset_in_next_frame = False
+
+    # Kiểm tra nếu đây là frame cuối cùng của animation, bật cờ reset
+    if frame == 139:  # 140 frames, index từ 0 đến 139
+        reset_in_next_frame = True
 
     t = frame * 0.05
-    # Reset quỹ đạo khi frame đạt 200 (cuối chu kỳ)
-    if frame == 0:
-        trail_points = []
-
     pos = position(t)
     vel = velocity_func(t)
 
@@ -84,9 +99,6 @@ def update_plot(frame):
     # Quỹ đạo
     trail_points.append(pos)
     pts = np.array(trail_points)
-    # Xóa quỹ đạo cũ trước khi vẽ quỹ đạo mới
-    trail.set_data([], [])
-    trail.set_3d_properties([])
     trail.set_data(pts[:, 0], pts[:, 1])
     trail.set_3d_properties(pts[:, 2])
 
@@ -94,12 +106,16 @@ def update_plot(frame):
     if v_arrow is not None:
         v_arrow.remove()
     v_arrow = ax.quiver(pos[0], pos[1], pos[2],
-                        vel[0]*0.1, vel[1]*0.1, vel[2]*0.1,
+                        vel[0] * 0.1, vel[1] * 0.1, vel[2] * 0.1,
                         color="b", arrow_length_ratio=0.2)
 
-    return ball, trail, v_arrow
+    # Cập nhật thông tin vị trí và thời gian
+    info_text.set_text(f"Thời gian: {t:.2f} s\nVị trí: x={pos[0]:.2f}, y={pos[1]:.2f}, z={pos[2]:.2f}")
+
+    return ball, trail, v_arrow, info_text
+
 
 # --- Animation ---
-ani = FuncAnimation(fig, update_plot, frames=200, interval=50, blit=False)
+ani = FuncAnimation(fig, update_plot, frames=140, interval=50, blit=False)
 plt.show()
 
