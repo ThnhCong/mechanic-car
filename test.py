@@ -1,120 +1,88 @@
+import tkinter as tk
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.animation import FuncAnimation
-
-# --- Setup figure ---
-fig = plt.figure(figsize=(10, 7))
-ax = fig.add_subplot(111, projection='3d')
-
-axis_length = 20
-tick_interval = 5
-
-# --- Vẽ hệ trục ---
-ax.quiver(0, 0, 0, axis_length, 0, 0, color="r", arrow_length_ratio=0.05)
-ax.quiver(0, 0, 0, 0, axis_length, 0, color="g", arrow_length_ratio=0.05)
-ax.quiver(0, 0, 0, 0, 0, axis_length, color="b", arrow_length_ratio=0.05)
-
-# Nhãn trục
-ax.text(axis_length + 1, 0, 0, "x", color="r")
-ax.text(0, axis_length + 1, 0, "y", color="g")
-ax.text(0, 0, axis_length + 1, "z", color="b")
-
-# Ticks
-ax.set_xticks(np.arange(0, axis_length + 1, tick_interval))
-ax.set_yticks(np.arange(0, axis_length + 1, tick_interval))
-ax.set_zticks(np.arange(-axis_length, axis_length + 1, tick_interval))
+from PIL import Image, ImageTk, ImageFont, ImageDraw, ImageGrab
 
 
-# --- Hàm vị trí ---
-def position(t):
-    x = 9.6 * t
-    y = 8.85
-    z = -t ** 2
-    return np.array([x, y, z])
+class interface:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Motion of car")
+        self.root.geometry("600x400")
+        self.screen_height = root.winfo_screenheight()
+        self.screen_width = root.winfo_screenwidth()
+        self.canvas = tk.Canvas(root, height=self.screen_height, width=self.screen_width)
+        self.canvas.pack()
+
+        self.button_start = tk.Button(self.root, text= "Start", command= self.start)
+        self.button_start.place(x= self.screen_width/2, y= self.screen_height/2)
+
+        self.button_reset = tk.Button(self.root, text="Reset", command=self.reset)
+        self.button_reset.place(x=self.screen_width / 2+50, y=self.screen_height / 2)
+
+    def motion(self):
+        self.img = Image.fromarray(cv2.resize(cv2.imread("car_rgba.png", cv2.IMREAD_UNCHANGED), (150,150)))
+        self.img_flip = Image.fromarray(cv2.flip(np.array(cv2.resize(cv2.imread("car_rgba.png", cv2.IMREAD_UNCHANGED), (100,100))), 1))
+        self.img_tk = ImageTk.PhotoImage(self.img)
+        self.img_id = self.canvas.create_image(self.screen_width/2, self.screen_height/2+100,image= self.img_tk)
+
+        self.cordinate_x = self.canvas.create_line(30, 10, 10, 30, 50, 30, 30, 10, 30, 400, 30, 310, 430, 310, 410, 290, 410, 330, 430, 310)
+        self.canvas.create_polygon(30, 10, 10, 30, 50, 30, fill= "black", outline= "black")
+        self.canvas.create_polygon(430, 310, 410, 290, 410, 330, fill= "black", outline= "black")
+        self.canvas.create_text(15, 310, fill= "black", font= ("Times New Roman", 15), text= "O")
+        self.canvas.create_text(430, 340, fill= "black", font= ("Times New Roman", 15), text= "time(s)", anchor="nw")
+        self.canvas.create_text(40, 40, fill= "black", font= ("Times New Roman", 15), text= "position", anchor= "nw")
+
+        self.canvas.create_line(self.screen_width/2-60, self.screen_height/2+150, self.screen_width/2+180, self.screen_height/2+150)
+        p = -2
+        for i in range(int(self.screen_width/2)-60, int(self.screen_width/2)+181, 30):
+            self.canvas.create_line(i, self.screen_height/2+145, i, self.screen_height/2+155)
+            self.canvas.create_text(i, self.screen_height/2+165, font= ("Times New Roman", 15), text= f"{p}")
+            p += 1
+
+        y0 = 305
+        y1 = 315
+        t = 0.0
+        for i in range(90, 391, 60):
+            self.canvas.create_line(i, y0, i, y1)
+            self.canvas.create_text(i, 330, fill= "black", font= ("Times New Roman", 15), text= f"{t+0.5}")
+            self.canvas.create_line(i, 400, i, 80, dash= (4,2))
+            t += 0.5
+
+        x0 = 25
+        x1 = 35
+        T = -2
+        for y in range(370, 99, -30):
+            if y != 310:
+                self.canvas.create_line(x0, y, x1, y)
+                self.canvas.create_text(15, y, fill= "black", font= ("Times New Roman", 15), text= T)
+                self.canvas.create_line(30, y, 400, y, dash= (4, 2))
+                T += 1
+            if y == 310:
+                T += 1
 
 
-# --- Hàm vận tốc ---
-def velocity_func(t):
-    return np.array([9.6, 0, -2 * t])
+        self.t = np.linspace(0,3,300)
+        self.x = -4*self.t + 2*self.t**2
+        self.t = 120*self.t
+        self.x = 30*self.x
+        for i in np.arange(0, len(self.t)-1):
+            self.canvas.create_line(self.t[i]+30, 310-self.x[i], 30+self.t[i+1], 310-self.x[i+1], fill= "red")
 
+        self.canvas.create_text(360, 220, font= ("Times New Roman", 15), fill= "green", text= "x = -4t + 2t²", anchor= "nw")
+        self.img_id_oval = self.canvas.create_oval((30+self.t[0])-7, (310-self.x[0])-7, (30+self.t[0])+7, (310-self.x[0])+7, fill= "black")
 
-# --- Tạo quả cầu ---
-def create_sphere(center, r=0.5, resolution=20):
-    u, v = np.mgrid[0:2 * np.pi:resolution * 1j, 0:np.pi:resolution * 1j]
-    x = r * np.cos(u) * np.sin(v) + center[0]
-    y = r * np.sin(u) * np.sin(v) + center[1]
-    z = r * np.cos(v) + center[2]
-    return x, y, z
+    def start(self, i=0):
+        self.canvas.coords(self.img_id, self.screen_width/2 + self.x[i], self.screen_height/2+100)
+        self.canvas.coords(self.img_id_oval, (30+self.t[i])-7, (310-self.x[i])-7, (30+self.t[i])+7, (310-self.x[i])+7)
+        self.canvas.after(10, self.start, i+1)
+    def reset(self):
+        self.canvas.coords(self.img_id, self.screen_width/2, self.screen_height/2+100)
+        self.canvas.coords(self.img_id_oval, (30+self.t[0])-7, (310-self.x[0])-7, (30+self.t[0])+7, (310-self.x[0])+7)
 
-
-# Vẽ quả cầu ban đầu
-pos0 = position(0)
-X, Y, Z = create_sphere(pos0, r=0.5)
-ball = ax.plot_surface(X, Y, Z, color="m", shade=True)
-
-# Quỹ đạo
-trail, = ax.plot([], [], [], '-', color="m", linewidth=1)
-
-# Vector vận tốc - Khởi tạo là None
-v_arrow = None
-
-# Hiển thị thông tin
-info_text = ax.text2D(0.05, 0.95, '', transform=ax.transAxes, fontsize=12, color='black')
-
-# Giới hạn khung nhìn
-ax.set_xlim(0, axis_length)
-ax.set_ylim(0, axis_length)
-ax.set_zlim(-axis_length, axis_length)
-
-trail_points = []
-reset_in_next_frame = False
-
-
-# --- Hàm update ---
-def update_plot(frame):
-    global v_arrow, trail_points, ball, reset_in_next_frame
-
-    # Nếu cờ reset được bật, xóa quỹ đạo ngay lập tức và tắt cờ
-    if reset_in_next_frame:
-        trail_points = []
-        trail.set_data([], [])
-        trail.set_3d_properties([])
-        reset_in_next_frame = False
-
-    # Kiểm tra nếu đây là frame cuối cùng của animation, bật cờ reset
-    if frame == 139:  # 140 frames, index từ 0 đến 139
-        reset_in_next_frame = True
-
-    t = frame * 0.05
-    pos = position(t)
-    vel = velocity_func(t)
-
-    # Xóa quả cầu cũ
-    ball.remove()
-    # Vẽ quả cầu mới tại vị trí pos
-    X, Y, Z = create_sphere(pos, r=0.5)
-    ball = ax.plot_surface(X, Y, Z, color="m", shade=True)
-
-    # Quỹ đạo
-    trail_points.append(pos)
-    pts = np.array(trail_points)
-    trail.set_data(pts[:, 0], pts[:, 1])
-    trail.set_3d_properties(pts[:, 2])
-
-    # Arrow: xóa cái cũ rồi vẽ mới
-    if v_arrow is not None:
-        v_arrow.remove()
-    v_arrow = ax.quiver(pos[0], pos[1], pos[2],
-                        vel[0] * 0.1, vel[1] * 0.1, vel[2] * 0.1,
-                        color="b", arrow_length_ratio=0.2)
-
-    # Cập nhật thông tin vị trí và thời gian
-    info_text.set_text(f"Thời gian: {t:.2f} s\nVị trí: x={pos[0]:.2f}, y={pos[1]:.2f}, z={pos[2]:.2f}")
-
-    return ball, trail, v_arrow, info_text
-
-
-# --- Animation ---
-ani = FuncAnimation(fig, update_plot, frames=140, interval=50, blit=False)
-plt.show()
+if __name__ == "__main__":
+    root = tk.Tk()
+    project = interface(root)
+    project.motion()
+    root.mainloop()
