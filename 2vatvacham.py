@@ -81,9 +81,9 @@ while t <= T_MAX:
 # --- 7. Kết quả ---
 print("\n================ KẾT QUẢ ==================")
 if len(collisions_AB) >= 1:
-    print(f"1️⃣ Lần chạm đầu tiên: t₁ = {collisions_AB[0][0]:.4f} s, x ≈ {collisions_AB[0][1]:.4f} m")
+    print(f"1️Lần chạm đầu tiên: t₁ = {collisions_AB[0][0]:.4f} s, x ≈ {collisions_AB[0][1]:.4f} m")
 if len(collisions_AB) >= 2:
-    print(f"2️⃣ Lần chạm thứ hai: t₂ = {collisions_AB[1][0]:.4f} s, x ≈ {collisions_AB[1][1]:.4f} m")
+    print(f"2️Lần chạm thứ hai: t₂ = {collisions_AB[1][0]:.4f} s, x ≈ {collisions_AB[1][1]:.4f} m")
 print(f"\n3️⃣ Trong 3s:")
 print(f"   Bi A chạm tường {collisions_AT} lần.")
 print(f"   Bi B chạm tường {collisions_BT} lần.")
@@ -131,4 +131,3 @@ ani = FuncAnimation(
 )
 
 plt.show(block=True)
-
